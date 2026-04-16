@@ -1,0 +1,36 @@
+<svg width="100%" viewBox="0 0 680 340" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">LifeGive — Organ Donation Logo</title>
+  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Logo for LifeGive, an organ donation website, featuring a heart with outstretched hands and a pulse line</desc>
+
+  <defs>
+    <clipPath id="heartClip">
+      <path d="M340 230 C260 175, 210 145, 210 105 C210 75, 235 55, 265 55 C290 55, 310 68, 340 95 C370 68, 390 55, 415 55 C445 55, 470 75, 470 105 C470 145, 420 175, 340 230Z"/>
+    </clipPath>
+  <mask id="imagine-text-gaps-et8jjp" maskUnits="userSpaceOnUse"><rect x="0" y="0" width="680" height="340" fill="white"/><rect x="254.54751586914062" y="248.7555389404297" width="170.90493774414062" height="44.80000305175781" fill="black" rx="2"/><rect x="241.94509887695312" y="293.9111022949219" width="196.10972595214844" height="19.111111640930176" fill="black" rx="2"/></mask></defs>
+
+  <!-- Heart shape -->
+  <path d="M340 228 C260 173, 208 142, 208 103 C208 72, 234 52, 265 52 C291 52, 312 66, 340 94 C368 66, 389 52, 415 52 C446 52, 472 72, 472 103 C472 142, 420 173, 340 228Z" fill="#F7C1C1" stroke="#E24B4A" stroke-width="1.5" style="fill:rgb(247, 193, 193);stroke:rgb(226, 75, 74);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Pulse / ECG line inside heart -->
+  <polyline points="240,135 265,135 278,108 290,158 303,95 316,158 329,135 355,135 365,118 374,150 385,135 410,135" fill="none" stroke="#A32D2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#heartClip)" style="fill:none;stroke:rgb(163, 45, 45);color:rgb(255, 255, 255);stroke-width:2px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Left hand / arm -->
+  <path d="M220 220 C195 210, 165 215, 148 228 C138 235, 135 245, 140 252 C145 260, 158 258, 170 252 L200 238" fill="none" stroke="#0F6E56" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(15, 110, 86);color:rgb(255, 255, 255);stroke-width:5px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Left hand palm -->
+  <ellipse cx="215" cy="228" rx="18" ry="11" fill="#1D9E75" stroke="#0F6E56" stroke-width="1" style="fill:rgb(29, 158, 117);stroke:rgb(15, 110, 86);color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Right hand / arm -->
+  <path d="M460 220 C485 210, 515 215, 532 228 C542 235, 545 245, 540 252 C535 260, 522 258, 510 252 L480 238" fill="none" stroke="#0F6E56" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(15, 110, 86);color:rgb(255, 255, 255);stroke-width:5px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Right hand palm -->
+  <ellipse cx="465" cy="228" rx="18" ry="11" fill="#1D9E75" stroke="#0F6E56" stroke-width="1" style="fill:rgb(29, 158, 117);stroke:rgb(15, 110, 86);color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Small upward ribbon/ribbon connecting hands under heart -->
+  <path d="M233 235 Q340 265, 447 235" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.7" mask="url(#imagine-text-gaps-et8jjp)" style="fill:none;stroke:rgb(29, 158, 117);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-dasharray:4px, 3px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.7;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Name: LifeGive -->
+  <text x="340" y="284" text-anchor="middle" font-family="Georgia, serif" font-size="36" font-weight="700" fill="#A32D2D" letter-spacing="1" style="fill:rgb(163, 45, 45);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Georgia, serif;font-size:36px;font-weight:700;text-anchor:middle;dominant-baseline:auto">Life<tspan fill="#0F6E56" style="fill:rgb(15, 110, 86);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Georgia, serif;font-size:36px;font-weight:700;text-anchor:middle;dominant-baseline:auto">Give</tspan></text>
+
+  <!-- Tagline -->
+  <text x="340" y="308" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#888780" letter-spacing="2" style="fill:rgb(136, 135, 128);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:sans-serif;font-size:13px;font-weight:400;text-anchor:middle;dominant-baseline:auto">GIVE THE GIFT OF LIFE</text>
+
+</svg>

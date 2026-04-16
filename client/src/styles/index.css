@@ -1,0 +1,147 @@
+/* Google Fonts â€” Inter & Plus Jakarta Sans */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* â”€â”€â”€ Base Layer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-sans bg-surface text-slate-900 transition-colors duration-200;
+    min-height: 100vh;
+  }
+
+  .dark body {
+    @apply bg-slate-900 text-slate-100;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-slate-300 dark:bg-slate-600 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-slate-400 dark:bg-slate-500; }
+
+  /* Focus ring improvement */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-organ;
+  }
+}
+
+/* â”€â”€â”€ Component Layer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@layer components {
+  /* Status Badge Variants */
+  .badge-critical {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold
+           bg-red-50 text-red-600 border border-red-200
+           dark:bg-red-900/20 dark:text-red-400 dark:border-red-800;
+  }
+
+  .badge-urgent {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold
+           bg-orange-50 text-orange-600 border border-orange-200
+           dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800;
+  }
+
+  .badge-normal {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold
+           bg-green-50 text-green-600 border border-green-200
+           dark:bg-green-900/20 dark:text-green-400 dark:border-green-800;
+  }
+
+  /* Card Component */
+  .card {
+    @apply bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700
+           shadow-sm hover:shadow-card-hover transition-shadow;
+  }
+
+  /* Input Base */
+  .input-base {
+    @apply w-full rounded-xl border border-slate-200 dark:border-slate-600
+           bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white
+           placeholder-slate-400 dark:placeholder-slate-500
+           px-4 py-2.5 text-sm
+           focus:outline-none focus:ring-2 focus:ring-blood/40 focus:border-blood
+           transition-all duration-150;
+  }
+
+  /* Button Variants */
+  .btn-primary {
+    @apply px-5 py-2.5 rounded-xl bg-blood hover:bg-red-700 text-white font-semibold text-sm
+           shadow-sm hover:shadow-blood hover:-translate-y-0.5 active:translate-y-0
+           transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600
+           text-slate-700 dark:text-slate-300 font-medium text-sm
+           hover:bg-slate-50 dark:hover:bg-slate-700
+           transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-organ {
+    @apply px-5 py-2.5 rounded-xl bg-organ hover:bg-blue-700 text-white font-semibold text-sm
+           shadow-sm hover:shadow-organ hover:-translate-y-0.5 active:translate-y-0
+           transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Section Card */
+  .section-card {
+    @apply bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm;
+  }
+}
+
+/* â”€â”€â”€ Leaflet Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.leaflet-popup-content-wrapper {
+  @apply rounded-xl shadow-lg border border-slate-100 !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+  line-height: 1.4 !important;
+}
+
+.leaflet-popup-tip-container {
+  display: none;
+}
+
+.leaflet-donor-icon {
+  background: none !important;
+  border: none !important;
+}
+
+/* â”€â”€â”€ Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.25s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

@@ -1,0 +1,147 @@
+﻿{
+  "info": {
+    "name": "Blood & Organ Donation Portal API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Updated collection with verification, matching, response flow, templates, and admin intelligence endpoints"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "accessToken", "value": "" },
+    { "key": "requestId", "value": "" },
+    { "key": "donorId", "value": "" },
+    { "key": "contactToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Donor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Donor One\",\n  \"phone\": \"+919111111111\",\n  \"role\": \"donor\",\n  \"bloodGroup\": \"O+\",\n  \"city\": \"New Delhi\",\n  \"pincode\": \"110001\",\n  \"organs\": [\"eyes\"],\n  \"smsAlertsEnabled\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-device-id", "value": "device-123" }
+            ],
+            "url": "{{baseUrl}}/auth/send-otp",
+            "body": { "mode": "raw", "raw": "{\n  \"phone\": \"+919111111111\"\n}" }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/verify-otp",
+            "body": { "mode": "raw", "raw": "{\n  \"phone\": \"+919111111111\",\n  \"code\": \"123456\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests",
+      "item": [
+        {
+          "name": "Create Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/requests",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"blood\",\n  \"bloodGroup\": \"A+\",\n  \"units\": 2,\n  \"urgency\": \"critical\",\n  \"hospitalName\": \"CityCare\",\n  \"contact\": \"+919222222222\",\n  \"city\": \"New Delhi\",\n  \"pincode\": \"110001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Donor Feed",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/requests/donor-feed"
+          }
+        },
+        {
+          "name": "Donor Respond",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/requests/{{requestId}}/respond",
+            "body": { "mode": "raw", "raw": "{\n  \"response\": \"accepted\"\n}" }
+          }
+        },
+        {
+          "name": "Reveal Contact",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/requests/{{requestId}}/contact?token={{contactToken}}"
+          }
+        },
+        {
+          "name": "Save Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/requests/templates",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emergency A+\",\n  \"type\": \"blood\",\n  \"bloodGroup\": \"A+\",\n  \"units\": 2,\n  \"urgency\": \"critical\",\n  \"hospitalName\": \"CityCare\",\n  \"contact\": \"+919222222222\",\n  \"city\": \"New Delhi\",\n  \"pincode\": \"110001\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Analytics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/analytics"
+          }
+        },
+        {
+          "name": "Campaign Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/campaign-suggestions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "System Health",
+          "request": { "method": "GET", "url": "{{baseUrl}}/health" }
+        }
+      ]
+    }
+  ]
+}
