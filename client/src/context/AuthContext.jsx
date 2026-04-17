@@ -19,11 +19,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await api.post("/auth/logout", { userId: user?._id });
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-    setUser(null);
+    try {
+      // Best-effort server logout. Local logout should still proceed if token is expired.
+      await api.post("/auth/logout");
+    } catch (_error) {
+      // no-op
+    } finally {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      setUser(null);
+    }
   };
 
   const value = useMemo(

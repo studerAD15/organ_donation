@@ -6,7 +6,11 @@ const canUseTwilioVerify = Boolean(
   config.twilio.accountSid && config.twilio.authToken && config.twilio.verifyServiceSid
 );
 
-const twilioClient = canUseTwilioVerify
+const canUseTwilioSms = Boolean(
+  config.twilio.accountSid && config.twilio.authToken && config.twilio.phoneNumber
+);
+
+const twilioClient = canUseTwilioVerify || canUseTwilioSms
   ? twilio(config.twilio.accountSid, config.twilio.authToken)
   : null;
 
@@ -43,7 +47,7 @@ export const sendOtp = async (rawPhone) => {
       await twilioClient.verify.v2
         .services(config.twilio.verifyServiceSid)
         .verifications.create({ to: phone, channel: "sms" });
-      return { channel: "twilio" };
+      return { channel: "twilio_verify" };
     } catch (err) {
       // Twilio trial accounts can only SMS verified numbers.
       // On failure, fall through to DB-based OTP so dev/test still works.
@@ -51,9 +55,28 @@ export const sendOtp = async (rawPhone) => {
     }
   }
 
-  // Fallback: store OTP in MongoDB
+  // Fallback: store OTP in MongoDB, then try to deliver via SMS (Twilio Messages).
   const code = await saveFallbackOtp(phone);
-  return { channel: "fallback", code };
+
+  if (canUseTwilioSms) {
+    try {
+      await twilioClient.messages.create({
+        to: phone,
+        from: config.twilio.phoneNumber,
+        body: `Your Organ Donation login OTP is ${code}. It expires in 10 minutes.`
+      });
+      return { channel: "twilio_sms" };
+    } catch (err) {
+      console.warn(`[OTP] Twilio SMS send failed: ${err.message}`);
+    }
+  }
+
+  // Last resort: OTP exists in DB but could not be delivered by SMS provider.
+  // Never return the OTP to the client.
+  if (config.nodeEnv !== "production") {
+    console.warn(`[OTP] OTP for ${phone}: ${code} (not delivered - configure Twilio)`);
+  }
+  return { channel: "fallback_db_only" };
 };
 
 export const verifyOtp = async (rawPhone, code) => {

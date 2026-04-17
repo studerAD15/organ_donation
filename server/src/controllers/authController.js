@@ -116,13 +116,7 @@ export const sendLoginOtp = async (req, res, next) => {
     }
 
     const otpResult = await sendOtp(phone);
-    const payload = { message: "OTP sent successfully", channel: otpResult.channel };
-
-    if (process.env.NODE_ENV !== "production" && otpResult.code) {
-      payload.devOtp = otpResult.code;
-    }
-
-    res.json(payload);
+    res.json({ message: "OTP sent successfully", channel: otpResult.channel });
   } catch (error) {
     next(error);
   }

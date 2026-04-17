@@ -54,13 +54,37 @@ const RegisterPage = () => {
     setMessage("");
     setFieldErrors({});
     try {
-      await api.post("/auth/register", { ...form, phone: normalizeIndianPhone(form.phone), role });
+      const basePayload = {
+        name: form.name,
+        phone: normalizeIndianPhone(form.phone),
+        email: form.email,
+        city: form.city,
+        pincode: form.pincode,
+        smsAlertsEnabled: form.smsAlertsEnabled,
+        role
+      };
+
+      const rolePayload =
+        role === "donor"
+          ? {
+              bloodGroup: form.bloodGroup,
+              organs: form.organs,
+              lastDonatedAt: form.lastDonatedAt || "",
+              idProofBase64: form.idProofBase64 || undefined
+            }
+          : {
+              hospitalName: form.hospitalName,
+              hospitalLicenseNumber: form.hospitalLicenseNumber
+            };
+
+      await api.post("/auth/register", { ...basePayload, ...rolePayload });
       setMessage("Registration successful. Please login with OTP.");
       setTimeout(() => navigate("/login"), 1000);
     } catch (error) {
       const nextFieldErrors = error.response?.data?.error?.fields || {};
       setFieldErrors(nextFieldErrors);
-      setMessage(error.response?.data?.error?.message || error.response?.data?.message || "Registration failed");
+      const firstFieldError = Object.values(nextFieldErrors)[0]?.[0];
+      setMessage(firstFieldError || error.response?.data?.error?.message || error.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }

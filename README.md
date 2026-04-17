@@ -176,6 +176,6 @@ Use MongoDB Atlas for production (`MONGO_URI`).
 
 ## Notes
 
-- In development without Twilio Verify, OTP fallback returns `devOtp`.
+- OTP is never returned to the browser. Configure Twilio (`TWILIO_VERIFY_SERVICE_SID` for Verify, or at minimum `TWILIO_PHONE_NUMBER` for SMS) to deliver OTPs to the user's mobile number.
 - Public request board redacts contact details.
 - Contact reveal requires both authorization and valid token/expiry.
