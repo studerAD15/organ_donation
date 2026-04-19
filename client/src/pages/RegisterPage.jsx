@@ -84,7 +84,11 @@ const RegisterPage = () => {
       const nextFieldErrors = error.response?.data?.error?.fields || {};
       setFieldErrors(nextFieldErrors);
       const firstFieldError = Object.values(nextFieldErrors)[0]?.[0];
-      setMessage(firstFieldError || error.response?.data?.error?.message || error.response?.data?.message || "Registration failed");
+      if (!error.response) {
+        setMessage("Cannot reach server. Check backend URL/CORS settings.");
+      } else {
+        setMessage(firstFieldError || error.response?.data?.error?.message || error.response?.data?.message || "Registration failed");
+      }
     } finally {
       setLoading(false);
     }

@@ -18,9 +18,21 @@ import { globalLimiter, requestCreateLimiter } from "./middleware/rateLimitMiddl
 
 const app = express();
 
+const allowedOrigins = new Set([config.clientUrl, ...config.clientUrls]);
+const isAllowedOrigin = (origin = "") => {
+  if (!origin) return true; // non-browser clients and health checks
+  if (allowedOrigins.has(origin)) return true;
+
+  // Allow Vercel preview deployments (e.g. branch preview URLs).
+  return /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+};
+
 app.use(
   cors({
-    origin: config.clientUrl,
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true
   })
 );

@@ -22,6 +22,10 @@ const config = {
   port: process.env.PORT || 5000,
   nodeEnv,
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
+  clientUrls: (process.env.CLIENT_URLS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   mongoUri: process.env.MONGO_URI || "mongodb://127.0.0.1:27017/organ_donation",
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET || "dev_access_secret_change_me",
