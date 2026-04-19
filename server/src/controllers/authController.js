@@ -111,7 +111,18 @@ export const sendLoginOtp = async (req, res, next) => {
   try {
     const { phone } = req.body;
     const user = await User.findOne({ phone });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      if (!config.otp.demoPreviewEnabled) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const demoOtp = await createDemoPreviewOtp(phone);
+      return res.json({
+        message: "Demo OTP generated for this number",
+        channel: "demo_preview",
+        demoOtp
+      });
+    }
 
     const abuseCheck = checkOtpAbuse({
       phone,
@@ -145,6 +156,9 @@ export const verifyLoginOtp = async (req, res, next) => {
     }
 
     const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ message: "No account found for this number" });
+    }
     const tokens = await buildTokens(user);
 
     res.json({ user: sanitizeUser(user), ...tokens });
