@@ -40,6 +40,9 @@ const config = {
     phoneNumber: process.env.TWILIO_PHONE_NUMBER,
     voiceWebhookUrl: process.env.TWILIO_VOICE_WEBHOOK_URL || ""
   },
+  otp: {
+    demoPreviewEnabled: process.env.OTP_DEMO_PREVIEW === "true"
+  },
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     apiKey: process.env.CLOUDINARY_API_KEY,

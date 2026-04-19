@@ -1,12 +1,13 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
-import { sendOtp, verifyOtp } from "../services/otpService.js";
+import { createDemoPreviewOtp, sendOtp, verifyOtp } from "../services/otpService.js";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 import { geocodePincode } from "../utils/geo.js";
 import { uploadIdProof } from "../services/cloudinaryService.js";
 import { validateHospitalLicense, validateHospitalRegistry } from "../utils/validators.js";
 import { checkOtpAbuse } from "../services/abusePreventionService.js";
+import config from "../config/env.js";
 
 const buildTokens = async (user) => {
   const accessToken = signAccessToken({ userId: user._id, role: user.role });
@@ -123,7 +124,13 @@ export const sendLoginOtp = async (req, res, next) => {
     }
 
     const otpResult = await sendOtp(phone);
-    res.json({ message: "OTP sent successfully", channel: otpResult.channel });
+    const response = { message: "OTP sent successfully", channel: otpResult.channel };
+
+    if (config.otp.demoPreviewEnabled) {
+      response.demoOtp = await createDemoPreviewOtp(phone);
+    }
+
+    res.json(response);
   } catch (error) {
     next(error);
   }

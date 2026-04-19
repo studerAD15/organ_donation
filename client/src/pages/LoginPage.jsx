@@ -14,6 +14,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [countdown, setCountdown] = useState(0);
+  const [demoOtp, setDemoOtp] = useState("");
 
   const startCountdown = (seconds = 30) => {
     setCountdown(seconds);
@@ -39,8 +40,10 @@ const LoginPage = () => {
     try {
       const { data } = await api.post("/auth/send-otp", { phone: normalizedPhone });
       setOtpSent(true);
+      setDemoOtp(data?.demoOtp || "");
       startCountdown(30);
     } catch (err) {
+      setDemoOtp("");
       setError(err.response?.data?.error?.message || err.response?.data?.message || "Failed to send OTP. Try again.");
     } finally {
       setLoading(false);
@@ -115,6 +118,20 @@ const LoginPage = () => {
             )}
           </button>
 
+          {otpSent && demoOtp && (
+            <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
+              <p className="text-xs font-semibold uppercase tracking-wide">Demo Mode</p>
+              <button
+                type="button"
+                onClick={() => setCode(demoOtp)}
+                className="mt-1 inline-flex items-center justify-center gap-2 text-lg font-bold text-amber-700 hover:text-amber-900"
+              >
+                {demoOtp}
+                <span className="text-sm font-medium">(click to fill)</span>
+              </button>
+            </div>
+          )}
+
           {otpSent && (
             <form onSubmit={verify} className="mt-6 space-y-4 border-t border-slate-100 dark:border-slate-700 pt-6">
               <div className="space-y-1.5">
@@ -125,7 +142,7 @@ const LoginPage = () => {
                   inputMode="numeric"
                   value={code}
                   onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="● ● ● ● ● ●"
+                  placeholder="* * * * * *"
                   maxLength={6}
                   autoFocus
                   className="w-full text-center tracking-[0.6em] text-xl py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-organ/50 focus:border-organ transition-all"

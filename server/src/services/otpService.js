@@ -79,6 +79,11 @@ export const sendOtp = async (rawPhone) => {
   return { channel: "fallback_db_only" };
 };
 
+export const createDemoPreviewOtp = async (rawPhone) => {
+  const phone = toE164(rawPhone);
+  return saveFallbackOtp(phone);
+};
+
 export const verifyOtp = async (rawPhone, code) => {
   const phone = toE164(rawPhone);
 
