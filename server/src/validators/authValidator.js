@@ -15,10 +15,35 @@ export const registerSchema = z.object({
   // Accept plain date strings ("2024-01-01") OR ISO datetime OR empty string
   lastDonatedAt: z.string().optional().or(z.literal("")),
   smsAlertsEnabled: z.preprocess((v) => v === true || v === "true" || v === "on", z.boolean()).default(true),
-  hospitalName: z.string().min(3).max(100).optional(),
-  hospitalLicenseNumber: z.string().optional(),
+  hospitalName: z.string().trim().min(3, "Hospital name must be at least 3 characters").max(100).optional(),
+  hospitalLicenseNumber: z.string().trim().min(6, "Hospital license number is too short").max(20).optional(),
   consentVersion: z.string().default("v1.0"),
   idProofBase64: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.role === "donor" && !data.bloodGroup) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["bloodGroup"],
+      message: "Blood group is required for donor registration"
+    });
+  }
+
+  if (data.role === "recipient") {
+    if (!data.hospitalName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["hospitalName"],
+        message: "Hospital name is required for recipient registration"
+      });
+    }
+    if (!data.hospitalLicenseNumber) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["hospitalLicenseNumber"],
+        message: "Hospital license number is required for recipient registration"
+      });
+    }
+  }
 });
 
 export const sendOtpSchema = z.object({

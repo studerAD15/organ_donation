@@ -173,6 +173,7 @@ Optional integrations (only if used):
 ### Database
 
 Use MongoDB Atlas for production (`MONGO_URI`).
+If registrations fail on deployed backend, verify Atlas **Network Access** allows your backend host (Render). For quick testing, allow `0.0.0.0/0`, then tighten later.
 
 ## Notes
 

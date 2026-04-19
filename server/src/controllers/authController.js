@@ -46,14 +46,21 @@ export const register = async (req, res, next) => {
       consentVersion
     } = req.body;
 
-    const existing = await User.findOne({ phone });
+    const normalizedPhone = String(phone || "").trim();
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedCity = String(city || "").trim();
+    const normalizedPincode = String(pincode || "").trim();
+    const normalizedHospitalName = role === "recipient" ? String(hospitalName || "").trim() : undefined;
+    const normalizedHospitalLicenseNumber = role === "recipient" ? String(hospitalLicenseNumber || "").trim() : undefined;
+
+    const existing = await User.findOne({ phone: normalizedPhone });
     if (existing) return res.status(409).json({ message: "Phone number already registered" });
 
     let hospitalVerificationStatus = "not_applicable";
     let verificationNotes = "";
-    if (role === "recipient" && hospitalLicenseNumber) {
-      validateHospitalLicense(hospitalLicenseNumber);
-      const registry = validateHospitalRegistry(hospitalLicenseNumber);
+    if (role === "recipient" && normalizedHospitalLicenseNumber) {
+      validateHospitalLicense(normalizedHospitalLicenseNumber);
+      const registry = validateHospitalRegistry(normalizedHospitalLicenseNumber);
       hospitalVerificationStatus = registry.status;
       verificationNotes = registry.reason;
     }
@@ -69,23 +76,23 @@ export const register = async (req, res, next) => {
       idProofUrl = await uploadIdProof(req.body.idProofBase64);
     }
 
-    const location = geocodePincode(pincode, city);
+    const location = geocodePincode(normalizedPincode, normalizedCity);
 
     const user = await User.create({
       name,
-      phone,
-      email,
+      phone: normalizedPhone,
+      email: normalizedEmail,
       role,
       bloodGroup: role === "donor" ? bloodGroup : null,
-      location: { ...location, pincode, city: city || location.city },
+      location: { ...location, pincode: normalizedPincode, city: normalizedCity || location.city },
       organs: role === "donor" ? organs || [] : [],
       lastDonatedAt,
       smsAlertsEnabled: smsAlertsEnabled !== false,
       idProofUrl,
       idProofHash,
       consentVersion: consentVersion || "v1.0",
-      hospitalName: role === "recipient" ? hospitalName : undefined,
-      hospitalLicenseNumber: role === "recipient" ? hospitalLicenseNumber : undefined,
+      hospitalName: normalizedHospitalName,
+      hospitalLicenseNumber: normalizedHospitalLicenseNumber,
       hospitalVerificationStatus,
       verificationNotes,
       isVerified: role === "recipient" ? hospitalVerificationStatus === "validated" : false,
