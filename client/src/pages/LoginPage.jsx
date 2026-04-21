@@ -4,6 +4,7 @@ import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { Spinner } from "../components/ui/index";
 import { normalizeIndianPhone, stripPhoneToDigits } from "../utils/phone";
+import logo from "../assets/lifegive_logo.svg";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -73,9 +74,7 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blood text-white text-2xl mb-4 shadow-lg shadow-red-500/25">
-            LG
-          </div>
+          <img src={logo} alt="LifeLink logo" className="mx-auto mb-4 h-20 w-20 rounded-2xl object-cover shadow-lg shadow-red-500/25" />
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Welcome back</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1.5 text-sm">Sign in with your registered phone number</p>
         </div>

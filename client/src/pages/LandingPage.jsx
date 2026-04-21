@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useEffect, useState, lazy, Suspense } from "react";
+import logo from "../assets/lifegive_logo.svg";
 
 const GlobeSection = lazy(() => import("../components/GlobeSection"));
 
@@ -109,9 +110,7 @@ const LandingPage = () => {
             transition={{ duration: 0.6 }}
             className="mx-auto mb-6 inline-flex items-center justify-center gap-3 px-4 py-2 rounded-3xl bg-white/5 border border-white/10"
           >
-            <div className="w-16 h-16 rounded-3xl bg-blood/20 border border-blood/30 flex items-center justify-center shadow-lg shadow-blood/20">
-              <span className="text-4xl">🩸</span>
-            </div>
+            <img src={logo} alt="LifeLink logo" className="h-24 w-24 sm:h-28 sm:w-28 rounded-3xl object-cover shadow-lg shadow-blood/25" />
             <div className="text-left">
               <div className="text-4xl sm:text-5xl font-display font-extrabold text-white leading-none tracking-tight">
                 Life<span className="text-blood">Link</span>

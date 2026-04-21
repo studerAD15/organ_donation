@@ -3,6 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { DarkModeToggle } from "../components/ui/index";
 import api from "../api/client";
+import logo from "../assets/lifegive_logo.svg";
 
 const roleConfig = {
   donor: { label: "Donor", color: "bg-blood/10 text-blood border-blood/20", href: "/dashboard/donor" },
@@ -21,7 +22,6 @@ const Layout = ({ children }) => {
       .catch(() => setHealth(null));
   }, []);
 
-  // Only warn for critical failures (DB down).
   const hasDependencyWarning = health && health.database === "down";
 
   const role = user?.role;
@@ -47,11 +47,9 @@ const Layout = ({ children }) => {
           <div className="flex h-16 items-center justify-between">
             <Link
               to="/"
-              className="flex items-center gap-2.5 font-bold text-slate-900 dark:text-white hover:opacity-80 transition-opacity"
+              className="flex items-center gap-3 font-bold text-slate-900 dark:text-white hover:opacity-80 transition-opacity"
             >
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blood text-white text-sm font-bold shadow-sm">
-                LL
-              </span>
+              <img src={logo} alt="LifeLink logo" className="h-12 w-12 rounded-xl object-cover shadow-sm" />
               <span className="text-lg font-display tracking-tight">
                 Life<span className="text-blood">Link</span>
               </span>
