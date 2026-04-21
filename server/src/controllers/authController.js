@@ -188,10 +188,11 @@ export const refreshSession = async (req, res, next) => {
 
 export const logout = async (req, res, next) => {
   try {
-    // BUG FIX: Use req.user._id set by protect middleware â€” never trust userId from body
+    // BUG FIX: Use req.user._id from protect middleware; do not trust userId from request body
     await User.findByIdAndUpdate(req.user._id, { $unset: { refreshTokenHash: 1 } });
     res.json({ message: "Logged out" });
   } catch (error) {
     next(error);
   }
 };
+

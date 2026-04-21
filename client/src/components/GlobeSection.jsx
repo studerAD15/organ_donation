@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
-// â”€â”€ Static India-focused arc data (donor â†’ recipient cities) â”€â”€â”€â”€â”€â”€
+// Static India-focused arc data (donor -> recipient cities)
 const INDIA_ARCS = [
-  { startLat: 28.6139, startLng: 77.2090, endLat: 19.0760, endLng: 72.8777, label: "Delhi â†’ Mumbai", color: "#ef4444" },
-  { startLat: 12.9716, startLng: 77.5946, endLat: 22.5726, endLng: 88.3639, label: "Bangalore â†’ Kolkata", color: "#f97316" },
-  { startLat: 17.3850, startLng: 78.4867, endLat: 28.6139, endLng: 77.2090, label: "Hyderabad â†’ Delhi", color: "#dc2626" },
-  { startLat: 13.0827, startLng: 80.2707, endLat: 23.0225, endLng: 72.5714, label: "Chennai â†’ Ahmedabad", color: "#b91c1c" },
-  { startLat: 22.5726, startLng: 88.3639, endLat: 19.0760, endLng: 72.8777, label: "Kolkata â†’ Mumbai", color: "#ef4444" },
-  { startLat: 26.8467, startLng: 80.9462, endLat: 12.9716, endLng: 77.5946, label: "Lucknow â†’ Bangalore", color: "#f97316" },
-  { startLat: 21.1458, startLng: 79.0882, endLat: 15.2993, endLng: 74.1240, label: "Nagpur â†’ Goa", color: "#dc2626" },
-  { startLat: 25.3176, startLng: 82.9739, endLat: 18.5204, endLng: 73.8567, label: "Varanasi â†’ Pune", color: "#b91c1c" },
+  { startLat: 28.6139, startLng: 77.2090, endLat: 19.0760, endLng: 72.8777, label: "Delhi -> Mumbai", color: "#ef4444" },
+  { startLat: 12.9716, startLng: 77.5946, endLat: 22.5726, endLng: 88.3639, label: "Bangalore -> Kolkata", color: "#f97316" },
+  { startLat: 17.3850, startLng: 78.4867, endLat: 28.6139, endLng: 77.2090, label: "Hyderabad -> Delhi", color: "#dc2626" },
+  { startLat: 13.0827, startLng: 80.2707, endLat: 23.0225, endLng: 72.5714, label: "Chennai -> Ahmedabad", color: "#b91c1c" },
+  { startLat: 22.5726, startLng: 88.3639, endLat: 19.0760, endLng: 72.8777, label: "Kolkata -> Mumbai", color: "#ef4444" },
+  { startLat: 26.8467, startLng: 80.9462, endLat: 12.9716, endLng: 77.5946, label: "Lucknow -> Bangalore", color: "#f97316" },
+  { startLat: 21.1458, startLng: 79.0882, endLat: 15.2993, endLng: 74.1240, label: "Nagpur -> Goa", color: "#dc2626" },
+  { startLat: 25.3176, startLng: 82.9739, endLat: 18.5204, endLng: 73.8567, label: "Varanasi -> Pune", color: "#b91c1c" },
 ];
 
 const DONOR_POINTS = [
@@ -34,7 +34,6 @@ const GlobeSection = () => {
   const [GlobeGL, setGlobeGL] = useState(null);
   const [error, setError] = useState(false);
 
-  // Dynamically import globe to avoid SSR/build issues
   useEffect(() => {
     import("react-globe.gl")
       .then((mod) => setGlobeGL(() => mod.default))
@@ -51,7 +50,7 @@ const GlobeSection = () => {
     return (
       <div className="flex items-center justify-center h-[500px] text-slate-400 text-center">
         <div>
-          <div className="text-4xl mb-3">ðŸŒ</div>
+          <div className="text-2xl mb-3">Map</div>
           <p className="text-sm">Globe unavailable in this environment</p>
         </div>
       </div>
@@ -71,7 +70,6 @@ const GlobeSection = () => {
 
   return (
     <div className="relative" ref={containerRef}>
-      {/* Legend */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 bg-black/40 backdrop-blur rounded-xl p-3 border border-white/10">
         <p className="text-white text-xs font-bold uppercase tracking-wide mb-1">Live Network</p>
         <div className="flex items-center gap-2">
@@ -88,7 +86,6 @@ const GlobeSection = () => {
         </div>
       </div>
 
-      {/* Hover tooltip */}
       {hoveredPoint && (
         <div className="absolute top-4 right-4 z-10 bg-black/60 backdrop-blur rounded-xl p-3 border border-white/10 text-white text-sm min-w-[140px]">
           <div className="flex items-center gap-2 mb-1">
@@ -111,7 +108,6 @@ const GlobeSection = () => {
           bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
           atmosphereColor="#ef4444"
           atmosphereAltitude={0.12}
-          // Arcs (donor â†’ recipient connections)
           arcsData={INDIA_ARCS}
           arcColor={getArcColor}
           arcDashLength={0.5}
@@ -119,14 +115,12 @@ const GlobeSection = () => {
           arcDashAnimateTime={2500}
           arcStroke={1.2}
           arcAltitude={0.25}
-          // Points (cities)
           pointsData={DONOR_POINTS}
           pointColor="color"
           pointAltitude={0.01}
           pointRadius={0.5}
           pointLabel={(p) => `<div style="background:rgba(0,0,0,0.7);color:white;padding:6px 10px;border-radius:8px;font-size:12px">${p.city}<br/><span style="opacity:0.7">${p.type}</span></div>`}
           onPointHover={handlePointHover}
-          // Start focused on India
           onGlobeReady={() => {
             if (globeRef.current) {
               globeRef.current.pointOfView({ lat: 22, lng: 82, altitude: 1.8 }, 1500);
@@ -135,7 +129,6 @@ const GlobeSection = () => {
         />
       </div>
 
-      {/* Bottom stat strip */}
       <div className="flex justify-center gap-8 mt-6 flex-wrap">
         {[
           { v: "8", l: "Active Transfers" },

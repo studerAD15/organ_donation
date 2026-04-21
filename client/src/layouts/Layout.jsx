@@ -21,10 +21,8 @@ const Layout = ({ children }) => {
       .catch(() => setHealth(null));
   }, []);
 
-  // Only warn for critical failures (DB down). Optional integrations like SMTP/Twilio
-  // showing as 'missing' in dev are expected and should not alarm the user.
-  const hasDependencyWarning =
-    health && health.database === "down";
+  // Only warn for critical failures (DB down).
+  const hasDependencyWarning = health && health.database === "down";
 
   const role = user?.role;
   const roleCfg = roleConfig[role];
@@ -38,40 +36,33 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-surface dark:bg-slate-900 transition-colors duration-200">
-      {/* Dependency Warning Banner */}
       {hasDependencyWarning && (
         <div className="bg-red-500 text-white text-xs text-center py-2 px-4 font-medium">
-          ðŸ”´ Database is unreachable. The application may not function correctly. Check your MongoDB connection.
+          Database is unreachable. The application may not function correctly. Check your MongoDB connection.
         </div>
       )}
 
-      {/* Navigation Header */}
       <header className="sticky top-0 z-50 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/80 shadow-sm">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
             <Link
               to="/"
               className="flex items-center gap-2.5 font-bold text-slate-900 dark:text-white hover:opacity-80 transition-opacity"
             >
               <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blood text-white text-sm font-bold shadow-sm">
-                ðŸ©¸
+                LL
               </span>
               <span className="text-lg font-display tracking-tight">
                 Life<span className="text-blood">Link</span>
               </span>
             </Link>
 
-            {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-1">
               <NavLink to="/requests" className={navLinkClass}>Requests</NavLink>
               <NavLink to="/map" className={navLinkClass}>Map</NavLink>
-              {roleCfg && (
-                <NavLink to={roleCfg.href} className={navLinkClass}>Dashboard</NavLink>
-              )}
+              {roleCfg && <NavLink to={roleCfg.href} className={navLinkClass}>Dashboard</NavLink>}
             </div>
 
-            {/* Right Controls */}
             <div className="flex items-center gap-2">
               <DarkModeToggle />
 
@@ -110,25 +101,21 @@ const Layout = ({ children }) => {
                 </div>
               )}
 
-              {/* Mobile Menu Toggle */}
               <button
                 className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-label="Toggle menu"
               >
-                {mobileOpen ? "âœ•" : "â˜°"}
+                {mobileOpen ? "x" : "="}
               </button>
             </div>
           </div>
 
-          {/* Mobile Nav */}
           {mobileOpen && (
             <div className="md:hidden border-t border-slate-100 dark:border-slate-700 py-3 space-y-1 animate-slide-in">
               <NavLink to="/requests" className={navLinkClass} onClick={() => setMobileOpen(false)}>Requests</NavLink>
               <NavLink to="/map" className={navLinkClass} onClick={() => setMobileOpen(false)}>Donor Map</NavLink>
-              {roleCfg && (
-                <NavLink to={roleCfg.href} className={navLinkClass} onClick={() => setMobileOpen(false)}>Dashboard</NavLink>
-              )}
+              {roleCfg && <NavLink to={roleCfg.href} className={navLinkClass} onClick={() => setMobileOpen(false)}>Dashboard</NavLink>}
               {!user && (
                 <>
                   <NavLink to="/register" className={navLinkClass} onClick={() => setMobileOpen(false)}>Register</NavLink>
@@ -140,16 +127,14 @@ const Layout = ({ children }) => {
         </nav>
       </header>
 
-      {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 animate-fade-in">
         {children}
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-slate-200 dark:border-slate-700 mt-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm text-slate-400 dark:text-slate-500">
-            Â© {new Date().getFullYear()} LifeLink Portal Â· Built with â¤ï¸ for organ donation
+            Copyright {new Date().getFullYear()} LifeLink Portal � Built with care for organ donation
           </p>
           <div className="flex gap-4 text-xs text-slate-400 dark:text-slate-500">
             <Link to="/requests" className="hover:text-blood transition-colors">Requests</Link>
