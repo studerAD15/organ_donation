@@ -7,7 +7,6 @@ import { geocodePincode } from "../utils/geo.js";
 import { uploadIdProof } from "../services/cloudinaryService.js";
 import { validateHospitalLicense, validateHospitalRegistry } from "../utils/validators.js";
 import { checkOtpAbuse } from "../services/abusePreventionService.js";
-import config from "../config/env.js";
 
 const buildTokens = async (user) => {
   const accessToken = signAccessToken({ userId: user._id, role: user.role });
@@ -112,10 +111,6 @@ export const sendLoginOtp = async (req, res, next) => {
     const { phone } = req.body;
     const user = await User.findOne({ phone });
     if (!user) {
-      if (!config.otp.demoPreviewEnabled) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
       const demoOtp = await createDemoPreviewOtp(phone);
       return res.json({
         message: "Demo OTP generated for this number",
@@ -135,11 +130,8 @@ export const sendLoginOtp = async (req, res, next) => {
     }
 
     const otpResult = await sendOtp(phone);
-    const response = { message: "OTP sent successfully", channel: otpResult.channel };
-
-    if (config.otp.demoPreviewEnabled) {
-      response.demoOtp = await createDemoPreviewOtp(phone);
-    }
+    const demoOtp = await createDemoPreviewOtp(phone);
+    const response = { message: "OTP sent successfully", channel: otpResult.channel, demoOtp };
 
     res.json(response);
   } catch (error) {
