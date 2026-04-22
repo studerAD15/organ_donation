@@ -7,5 +7,9 @@ export const signAccessToken = (payload) =>
 export const signRefreshToken = (payload) =>
   jwt.sign(payload, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpires });
 
+export const signAdminPanelToken = (payload) =>
+  jwt.sign(payload, config.jwt.adminPanelSecret, { expiresIn: config.jwt.adminPanelExpires });
+
 export const verifyAccessToken = (token) => jwt.verify(token, config.jwt.accessSecret);
 export const verifyRefreshToken = (token) => jwt.verify(token, config.jwt.refreshSecret);
+export const verifyAdminPanelToken = (token) => jwt.verify(token, config.jwt.adminPanelSecret);

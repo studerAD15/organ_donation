@@ -31,7 +31,12 @@ const config = {
     accessSecret: process.env.JWT_ACCESS_SECRET || "dev_access_secret_change_me",
     refreshSecret: process.env.JWT_REFRESH_SECRET || "dev_refresh_secret_change_me",
     accessExpires: process.env.JWT_ACCESS_EXPIRES || "15m",
-    refreshExpires: process.env.JWT_REFRESH_EXPIRES || "7d"
+    refreshExpires: process.env.JWT_REFRESH_EXPIRES || "7d",
+    adminPanelSecret: process.env.JWT_ADMIN_PANEL_SECRET || process.env.JWT_ACCESS_SECRET || "dev_admin_panel_secret_change_me",
+    adminPanelExpires: process.env.JWT_ADMIN_PANEL_EXPIRES || "2h"
+  },
+  admin: {
+    panelPassword: process.env.ADMIN_PANEL_PASSWORD || ""
   },
   twilio: {
     accountSid: process.env.TWILIO_ACCOUNT_SID,

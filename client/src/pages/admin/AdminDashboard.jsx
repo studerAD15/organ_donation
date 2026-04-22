@@ -1,346 +1,691 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import api from "../../api/client";
-import { StatCard, DashboardSkeleton, StatusBadge, RequestStatusBadge, Pagination, EmptyState } from "../../components/ui/index";
+import { useEffect, useMemo, useState } from "react";
+import { Bar, Doughnut, Line } from "react-chartjs-2";
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LineElement,
+  LinearScale,
+  PointElement,
+  Tooltip
+} from "chart.js";
 import toast from "react-hot-toast";
+import api from "../../api/client";
+import { DashboardSkeleton, EmptyState, Pagination, RequestStatusBadge, Spinner, StatCard } from "../../components/ui/index";
 
-const TABS = [
-  { id: "overview", label: "Overview", icon: "📊" },
-  { id: "requests", label: "Requests", icon: "📋" },
-  { id: "donors", label: "Donors", icon: "🩸" },
-  { id: "verifications", label: "Verifications", icon: "✅" },
-];
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
+
+const TABS = ["overview", "donors", "hospitals", "roles", "verifications", "requests"];
+
+const chartTextColor = "#94a3b8";
+const chartGridColor = "rgba(148,163,184,0.2)";
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: chartTextColor, boxWidth: 12, boxHeight: 12 } }
+  },
+  scales: {
+    x: { ticks: { color: chartTextColor }, grid: { color: chartGridColor } },
+    y: { ticks: { color: chartTextColor }, grid: { color: chartGridColor } }
+  }
+};
 
 const AdminDashboard = () => {
   const [tab, setTab] = useState("overview");
+  const [unlockPassword, setUnlockPassword] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+  const [panelToken, setPanelToken] = useState(() => sessionStorage.getItem("adminPanelToken") || "");
   const [analytics, setAnalytics] = useState(null);
-  const [requests, setRequests] = useState([]);
-  const [requestPagination, setRequestPagination] = useState({});
+  const [loading, setLoading] = useState(false);
   const [donors, setDonors] = useState([]);
-  const [donorPagination, setDonorPagination] = useState({});
-  const [pendingVerifs, setPendingVerifs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [requestPage, setRequestPage] = useState(1);
-  const [donorPage, setDonorPage] = useState(1);
-  const [requestFilter, setRequestFilter] = useState({ status: "", urgency: "" });
+  const [hospitals, setHospitals] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [pendingVerifications, setPendingVerifications] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [campaignSuggestions, setCampaignSuggestions] = useState([]);
   const [donorSearch, setDonorSearch] = useState("");
+  const [hospitalSearch, setHospitalSearch] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [donorPage, setDonorPage] = useState(1);
+  const [hospitalPage, setHospitalPage] = useState(1);
+  const [userPage, setUserPage] = useState(1);
+  const [requestPage, setRequestPage] = useState(1);
+  const [donorPagination, setDonorPagination] = useState({});
+  const [hospitalPagination, setHospitalPagination] = useState({});
+  const [userPagination, setUserPagination] = useState({});
+  const [requestPagination, setRequestPagination] = useState({});
+
+  const adminHeaders = useMemo(
+    () => ({
+      headers: {
+        "x-admin-panel-token": panelToken
+      }
+    }),
+    [panelToken]
+  );
+
+  const roleDistributionData = useMemo(() => {
+    if (!analytics) return null;
+    return {
+      labels: ["Donors", "Hospitals", "Admins"],
+      datasets: [
+        {
+          data: [analytics.totalDonors || 0, analytics.totalRecipients || 0, analytics.totalAdmins || 0],
+          backgroundColor: ["#ef4444", "#2563eb", "#16a34a"],
+          borderWidth: 0
+        }
+      ]
+    };
+  }, [analytics]);
+
+  const requestLifecycleData = useMemo(() => {
+    if (!analytics) return null;
+    return {
+      labels: ["Open", "Matched", "Fulfilled", "Expired"],
+      datasets: [
+        {
+          label: "Requests",
+          data: [
+            analytics.openRequests || 0,
+            analytics.matchedRequests || 0,
+            analytics.fulfilledRequests || 0,
+            analytics.expiredRequests || 0
+          ],
+          backgroundColor: ["#f59e0b", "#3b82f6", "#22c55e", "#64748b"]
+        }
+      ]
+    };
+  }, [analytics]);
+
+  const donorsByCityData = useMemo(() => {
+    const cities = analytics?.donorsByCity || [];
+    return {
+      labels: cities.slice(0, 10).map((item) => item._id || "Unknown"),
+      datasets: [
+        {
+          label: "Donors",
+          data: cities.slice(0, 10).map((item) => item.count),
+          backgroundColor: "#60a5fa"
+        }
+      ]
+    };
+  }, [analytics]);
+
+  const donorsByBloodTypeData = useMemo(() => {
+    const bloodGroups = analytics?.donorsByBloodType || [];
+    return {
+      labels: bloodGroups.map((item) => item._id || "N/A"),
+      datasets: [
+        {
+          label: "Donors",
+          data: bloodGroups.map((item) => item.count),
+          backgroundColor: "#f97316"
+        }
+      ]
+    };
+  }, [analytics]);
+
+  const fulfilledTrendData = useMemo(() => {
+    const trend = analytics?.fulfilledPerMonth || [];
+    return {
+      labels: trend.map((item) => item._id),
+      datasets: [
+        {
+          label: "Fulfilled Requests",
+          data: trend.map((item) => item.count),
+          borderColor: "#22c55e",
+          backgroundColor: "rgba(34,197,94,0.2)",
+          fill: true,
+          tension: 0.35
+        }
+      ]
+    };
+  }, [analytics]);
+
+  const cityDemandData = useMemo(() => {
+    const heatmap = analytics?.cityHeatmap || [];
+    return {
+      labels: heatmap.slice(0, 10).map((item) => item._id || "Unknown"),
+      datasets: [
+        {
+          label: "Requests",
+          data: heatmap.slice(0, 10).map((item) => item.requests),
+          backgroundColor: "#a855f7"
+        },
+        {
+          label: "Critical",
+          data: heatmap.slice(0, 10).map((item) => item.critical),
+          backgroundColor: "#ef4444"
+        }
+      ]
+    };
+  }, [analytics]);
+
+  const shortageData = useMemo(() => {
+    const shortages = analytics?.shortages || [];
+    return {
+      labels: shortages.map((item) => `${item._id?.city || "Unknown"}-${item._id?.bloodGroup || "N/A"}`),
+      datasets: [
+        {
+          label: "Open Shortages",
+          data: shortages.map((item) => item.openRequests),
+          backgroundColor: "#f43f5e"
+        }
+      ]
+    };
+  }, [analytics]);
+
+  const clearPanelSession = () => {
+    sessionStorage.removeItem("adminPanelToken");
+    setPanelToken("");
+    setAnalytics(null);
+    setDonors([]);
+    setHospitals([]);
+    setUsers([]);
+    setPendingVerifications([]);
+    setRequests([]);
+    setCampaignSuggestions([]);
+  };
+
+  const unlockAdminPanel = async (event) => {
+    event.preventDefault();
+    if (!unlockPassword.trim()) {
+      toast.error("Enter admin panel password");
+      return;
+    }
+
+    setUnlocking(true);
+    try {
+      const { data } = await api.post("/admin/access/unlock", { password: unlockPassword.trim() });
+      sessionStorage.setItem("adminPanelToken", data.panelToken);
+      setPanelToken(data.panelToken);
+      setUnlockPassword("");
+      toast.success("Admin panel unlocked");
+    } catch (error) {
+      const message = error.response?.data?.error?.message || error.response?.data?.message || "Invalid admin panel password";
+      toast.error(message);
+    } finally {
+      setUnlocking(false);
+    }
+  };
 
   const loadAnalytics = async () => {
+    const { data } = await api.get("/admin/analytics", adminHeaders);
+    setAnalytics(data);
+  };
+
+  const loadDonors = async (page = donorPage) => {
+    const { data } = await api.get("/admin/users", {
+      ...adminHeaders,
+      params: { role: "donor", page, limit: 10, ...(donorSearch ? { search: donorSearch } : {}) }
+    });
+    setDonors(data?.data || []);
+    setDonorPagination(data?.pagination || {});
+  };
+
+  const loadHospitals = async (page = hospitalPage) => {
+    const { data } = await api.get("/admin/hospitals", {
+      ...adminHeaders,
+      params: { page, limit: 10, ...(hospitalSearch ? { search: hospitalSearch } : {}) }
+    });
+    setHospitals(data?.data || []);
+    setHospitalPagination(data?.pagination || {});
+  };
+
+  const loadUsers = async (page = userPage) => {
+    const { data } = await api.get("/admin/users", {
+      ...adminHeaders,
+      params: { role: "all", page, limit: 10, ...(userSearch ? { search: userSearch } : {}) }
+    });
+    setUsers(data?.data || []);
+    setUserPagination(data?.pagination || {});
+  };
+
+  const loadPendingVerifications = async () => {
+    const { data } = await api.get("/admin/verifications", adminHeaders);
+    setPendingVerifications(data || []);
+  };
+
+  const loadRequests = async (page = requestPage) => {
+    const { data } = await api.get("/admin/requests", {
+      ...adminHeaders,
+      params: { page, limit: 10 }
+    });
+    setRequests(data?.data || []);
+    setRequestPagination(data?.pagination || {});
+  };
+
+  const loadCampaignSuggestions = async () => {
+    const { data } = await api.get("/admin/campaign-suggestions", adminHeaders);
+    setCampaignSuggestions(data?.suggestions || []);
+  };
+
+  const loadDashboard = async () => {
+    setLoading(true);
     try {
-      const { data } = await api.get("/admin/analytics");
-      setAnalytics(data);
-    } catch { /* non-breaking */ }
+      await Promise.all([
+        loadAnalytics(),
+        loadDonors(1),
+        loadHospitals(1),
+        loadUsers(1),
+        loadPendingVerifications(),
+        loadRequests(1),
+        loadCampaignSuggestions()
+      ]);
+      setDonorPage(1);
+      setHospitalPage(1);
+      setUserPage(1);
+      setRequestPage(1);
+    } catch (error) {
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        clearPanelSession();
+        toast.error("Admin panel session expired. Unlock again.");
+      } else {
+        toast.error("Failed to load admin data");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const loadRequests = async (page = 1) => {
-    const params = { page, limit: 15, ...Object.fromEntries(Object.entries(requestFilter).filter(([, v]) => v)) };
-    const { data } = await api.get("/admin/requests", { params });
-    const items = data?.data ?? data;
-    const pagination = data?.pagination ?? {};
-    setRequests(items);
-    setRequestPagination(pagination);
+  const updateRole = async (userId, role) => {
+    try {
+      await api.patch(`/admin/users/${userId}/role`, { role }, adminHeaders);
+      toast.success("Role updated");
+      await Promise.all([loadUsers(userPage), loadAnalytics(), loadDonors(donorPage), loadHospitals(hospitalPage)]);
+    } catch (error) {
+      toast.error(error.response?.data?.error?.message || error.response?.data?.message || "Failed to update role");
+    }
   };
 
-  const loadDonors = async (page = 1) => {
-    const params = { page, limit: 15, ...(donorSearch ? { search: donorSearch } : {}) };
-    const { data } = await api.get("/admin/users", { params });
-    const items = data?.data ?? data;
-    const pagination = data?.pagination ?? {};
-    setDonors(items);
-    setDonorPagination(pagination);
-  };
-
-  const loadVerifications = async () => {
-    const { data } = await api.get("/admin/verifications/pending");
-    setPendingVerifs(data?.data ?? data);
+  const reviewVerification = async (userId, isVerified) => {
+    try {
+      await api.patch(`/admin/verifications/${userId}`, { isVerified, notes: "" }, adminHeaders);
+      toast.success(isVerified ? "User approved" : "User rejected");
+      await Promise.all([loadPendingVerifications(), loadAnalytics(), loadDonors(donorPage), loadHospitals(hospitalPage)]);
+    } catch (error) {
+      toast.error(error.response?.data?.error?.message || error.response?.data?.message || "Failed to update verification");
+    }
   };
 
   useEffect(() => {
-    Promise.all([loadAnalytics(), loadRequests(), loadDonors(), loadVerifications()]).finally(() => setLoading(false));
-  }, []);
+    if (panelToken) {
+      loadDashboard();
+    }
+  }, [panelToken]);
 
-  useEffect(() => { loadRequests(requestPage); }, [requestPage, requestFilter]);
-  useEffect(() => { loadDonors(donorPage); }, [donorPage, donorSearch]);
+  useEffect(() => {
+    if (panelToken) loadDonors(donorPage);
+  }, [donorPage, donorSearch]);
 
-  const verifyUser = async (userId, action) => {
-    await api.patch(`/admin/verify-user/${userId}`, { action });
-    toast.success(`User ${action}d successfully`);
-    loadVerifications();
-  };
+  useEffect(() => {
+    if (panelToken) loadHospitals(hospitalPage);
+  }, [hospitalPage, hospitalSearch]);
 
-  const toggleUserStatus = async (userId, isBanned) => {
-    await api.patch(`/admin/users/${userId}/status`, { isBanned: !isBanned });
-    toast.success(!isBanned ? "User banned" : "User unbanned");
-    loadDonors(donorPage);
-  };
+  useEffect(() => {
+    if (panelToken) loadUsers(userPage);
+  }, [userPage, userSearch]);
 
-  if (loading) return <DashboardSkeleton />;
+  useEffect(() => {
+    if (panelToken) loadRequests(requestPage);
+  }, [requestPage]);
+
+  if (!panelToken) {
+    return (
+      <div className="max-w-xl mx-auto section-card">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Admin Access</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+          Enter the unique admin panel password to access donor and hospital data.
+        </p>
+        <form onSubmit={unlockAdminPanel} className="mt-5 space-y-3">
+          <input
+            type="password"
+            value={unlockPassword}
+            onChange={(event) => setUnlockPassword(event.target.value)}
+            placeholder="Admin panel password"
+            className="input-base"
+            autoComplete="current-password"
+          />
+          <button type="submit" disabled={unlocking} className="btn-primary w-full flex items-center justify-center gap-2">
+            {unlocking ? <Spinner size="sm" color="white" /> : null}
+            {unlocking ? "Unlocking..." : "Unlock Admin Panel"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  if (loading || !analytics) return <DashboardSkeleton />;
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      {/* ─── Header ────────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-800 to-slate-900 p-6 sm:p-8 text-white border border-slate-700 shadow-xl"
-      >
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
-        <div className="relative">
-          <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest mb-1">Admin Control Center</p>
-          <h1 className="text-2xl font-display font-bold">LifeLink Admin Dashboard</h1>
-          <p className="text-slate-400 text-sm mt-1">Manage donors, requests, verifications and platform health</p>
+    <div className="space-y-6">
+      <div className="section-card flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Live operations, trends, shortages, campaign planning, and role control
+          </p>
         </div>
-        {/* Live stats */}
-        {analytics && (
-          <div className="relative flex flex-wrap gap-6 mt-6 pt-6 border-t border-slate-700">
-            {[
-              { label: "Total Users", value: analytics.totalUsers || 0, color: "text-purple-400" },
-              { label: "Open Requests", value: analytics.openRequests || 0, color: "text-blood" },
-              { label: "Pending Verif.", value: pendingVerifs.length, color: "text-amber-400" },
-              { label: "Fulfilled", value: analytics.fulfilledRequests || 0, color: "text-safe" },
-            ].map((s) => (
-              <div key={s.label}>
-                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-slate-400 text-xs mt-0.5">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </motion.div>
+        <div className="flex gap-2">
+          <button onClick={loadDashboard} className="btn-organ">Refresh Data</button>
+          <button onClick={clearPanelSession} className="btn-secondary">Lock Panel</button>
+        </div>
+      </div>
 
-      {/* ─── Tab Bar ───────────────────────────────────────────── */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {TABS.map((t) => (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Users" value={analytics.totalUsers || 0} icon="U" color="purple" />
+        <StatCard label="Donors" value={analytics.totalDonors || 0} icon="D" color="blood" />
+        <StatCard label="Hospitals" value={analytics.totalRecipients || 0} icon="H" color="organ" />
+        <StatCard label="Admins" value={analytics.totalAdmins || 0} icon="A" color="safe" />
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Open Requests" value={analytics.openRequests || 0} icon="O" color="amber" />
+        <StatCard label="Matched" value={analytics.matchedRequests || 0} icon="M" color="organ" />
+        <StatCard label="Fulfilled" value={analytics.fulfilledRequests || 0} icon="F" color="safe" />
+        <StatCard label="Pending Verif." value={pendingVerifications.length} icon="P" color="purple" />
+      </div>
+
+      <div className="section-card grid gap-4 md:grid-cols-3">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/40">
+          <p className="text-sm text-slate-500">Verified Users</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-white">
+            {analytics.verifiedUsers || 0} ({analytics.verifiedPercent || 0}%)
+          </p>
+        </div>
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/40">
+          <p className="text-sm text-slate-500">Avg Minutes To Match</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-white">{analytics.sla?.avgMinutesToMatch || 0}</p>
+        </div>
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/40">
+          <p className="text-sm text-slate-500">Avg Minutes To Fulfill</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-white">{analytics.sla?.avgMinutesToFulfill || 0}</p>
+        </div>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {TABS.map((item) => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              tab === t.id
-                ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+            key={item}
+            onClick={() => setTab(item)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${
+              tab === item ? "bg-slate-900 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
             }`}
           >
-            {t.icon} {t.label}
-            {t.id === "verifications" && pendingVerifs.length > 0 && (
-              <span className="px-1.5 py-0.5 text-xs rounded-full bg-amber-500 text-white font-bold">{pendingVerifs.length}</span>
-            )}
+            {item}
           </button>
         ))}
       </div>
 
-      {/* ─── Tab Content ───────────────────────────────────────── */}
-      <AnimatePresence mode="wait">
-        {/* OVERVIEW ─────────────────────────────────────────── */}
-        {tab === "overview" && (
-          <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
-            {analytics ? (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <StatCard icon="👥" label="Total Users" value={analytics.totalUsers || 0} color="purple" />
-                  <StatCard icon="🩸" label="Total Donors" value={analytics.totalDonors || 0} color="blood" />
-                  <StatCard icon="🏥" label="Hospitals" value={analytics.totalRecipients || 0} color="organ" />
-                  <StatCard icon="✅" label="Verified" value={analytics.verifiedUsers || 0} color="safe" trend={`${analytics.verifiedPercent || 0}% of all users`} trendPositive />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <StatCard icon="📋" label="Open Requests" value={analytics.openRequests || 0} color="amber" />
-                  <StatCard icon="🤝" label="Matched" value={analytics.matchedRequests || 0} color="organ" />
-                  <StatCard icon="🎉" label="Fulfilled" value={analytics.fulfilledRequests || 0} color="safe" />
-                </div>
-
-                {/* Recent Requests Quick View */}
-                <div className="section-card">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-display font-bold text-slate-900 dark:text-white">Recent Requests</h2>
-                    <button onClick={() => setTab("requests")} className="text-xs text-organ hover:underline font-medium">View all →</button>
-                  </div>
-                  <div className="space-y-2">
-                    {requests.slice(0, 5).map((r) => (
-                      <div key={r._id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50">
-                        <div className="text-lg">{r.type === "blood" ? "🩸" : "🫀"}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">{r.hospitalName || r.recipientId?.hospitalName}</p>
-                          <p className="text-xs text-slate-400">{r.type === "blood" ? r.bloodGroup : r.organType} · {r.location?.city}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <StatusBadge status={r.urgency} />
-                          <RequestStatusBadge status={r.status} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="section-card text-center py-12 text-slate-400">
-                Could not load analytics. Check backend connectivity.
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {/* REQUESTS ──────────────────────────────────────────── */}
-        {tab === "requests" && (
-          <motion.div key="requests" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="section-card space-y-4">
-            <div className="flex flex-wrap gap-3 items-center">
-              <h2 className="font-display font-bold text-slate-900 dark:text-white mr-auto">All Requests</h2>
-              <select
-                value={requestFilter.status}
-                onChange={(e) => { setRequestFilter((p) => ({ ...p, status: e.target.value })); setRequestPage(1); }}
-                className="input-base w-36"
-              >
-                <option value="">All Status</option>
-                {["open", "matched", "fulfilled", "expired"].map((s) => <option key={s} value={s} className="capitalize">{s}</option>)}
-              </select>
-              <select
-                value={requestFilter.urgency}
-                onChange={(e) => { setRequestFilter((p) => ({ ...p, urgency: e.target.value })); setRequestPage(1); }}
-                className="input-base w-36"
-              >
-                <option value="">All Urgency</option>
-                {["critical", "urgent", "normal"].map((u) => <option key={u} value={u} className="capitalize">{u}</option>)}
-              </select>
+      {tab === "overview" && (
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="section-card h-72">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Role Distribution</h3>
+              <div className="h-56">{roleDistributionData && <Doughnut data={roleDistributionData} options={{ ...chartOptions, scales: undefined }} />}</div>
             </div>
+            <div className="section-card h-72">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Request Lifecycle</h3>
+              <div className="h-56">{requestLifecycleData && <Bar data={requestLifecycleData} options={chartOptions} />}</div>
+            </div>
+          </div>
 
-            <div className="space-y-2">
-              {requests.length === 0 ? (
-                <EmptyState icon="📭" title="No requests found" description="Try changing your filters." />
-              ) : requests.map((r, i) => (
-                <motion.div key={r._id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-                  className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-                >
-                  <div className="text-xl">{r.type === "blood" ? "🩸" : "🫀"}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900 dark:text-white text-sm">{r.hospitalName || r.recipientId?.name}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{r.type === "blood" ? r.bloodGroup : r.organType} · {r.location?.city} · {new Date(r.createdAt).toLocaleDateString("en-IN")}</p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <StatusBadge status={r.urgency} />
-                    <RequestStatusBadge status={r.status} />
-                  </div>
-                  {r.fraudScore > 5 && (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-bold">⚠️ Fraud {r.fraudScore}</span>
-                  )}
-                </motion.div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="section-card h-80">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Donors by City</h3>
+              <div className="h-64"><Bar data={donorsByCityData} options={chartOptions} /></div>
+            </div>
+            <div className="section-card h-80">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Donors by Blood Group</h3>
+              <div className="h-64"><Bar data={donorsByBloodTypeData} options={chartOptions} /></div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="section-card h-80">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Fulfillment Trend by Month</h3>
+              <div className="h-64"><Line data={fulfilledTrendData} options={chartOptions} /></div>
+            </div>
+            <div className="section-card h-80">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">City Demand Heatmap</h3>
+              <div className="h-64"><Bar data={cityDemandData} options={chartOptions} /></div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="section-card h-80">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Top Shortage Clusters</h3>
+              <div className="h-64"><Bar data={shortageData} options={chartOptions} /></div>
+            </div>
+            <div className="section-card">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Campaign Suggestions</h3>
+              {campaignSuggestions.length === 0 ? (
+                <EmptyState title="No campaign suggestions right now" />
+              ) : (
+                <div className="space-y-2">
+                  {campaignSuggestions.map((item) => (
+                    <div key={item.title} className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                      <p className="font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                      <p className="text-xs text-slate-500 mt-1">{item.targetAudience}</p>
+                      <p className="text-xs text-rose-500 mt-1">{item.reason}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="section-card">
+            <h3 className="font-semibold text-slate-900 dark:text-white mb-3">System Health</h3>
+            <div className="grid gap-3 md:grid-cols-4">
+              {Object.entries(analytics.dependencyHealth || {}).map(([name, status]) => (
+                <div key={name} className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">{name}</p>
+                  <p className={`font-semibold mt-1 ${status === "up" ? "text-green-500" : "text-red-500"}`}>{status}</p>
+                </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
 
-            {requestPagination.pages > 1 && (
-              <Pagination
-                page={requestPagination.page}
-                pages={requestPagination.pages}
-                hasNext={requestPagination.hasNext}
-                hasPrev={requestPagination.hasPrev}
-                onNext={() => setRequestPage((p) => p + 1)}
-                onPrev={() => setRequestPage((p) => p - 1)}
-              />
-            )}
-          </motion.div>
-        )}
-
-        {/* DONORS ─────────────────────────────────────────────── */}
-        {tab === "donors" && (
-          <motion.div key="donors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="section-card space-y-4">
-            <div className="flex flex-wrap gap-3 items-center">
-              <h2 className="font-display font-bold text-slate-900 dark:text-white mr-auto">All Users</h2>
-              <input
-                placeholder="🔍 Search by name or phone..."
-                value={donorSearch}
-                onChange={(e) => { setDonorSearch(e.target.value); setDonorPage(1); }}
-                className="input-base w-64"
-              />
-            </div>
-
+      {tab === "donors" && (
+        <div className="section-card space-y-4">
+          <div className="flex gap-3 items-center">
+            <h2 className="font-semibold text-slate-900 dark:text-white mr-auto">Registered Donors</h2>
+            <input
+              value={donorSearch}
+              onChange={(event) => {
+                setDonorSearch(event.target.value);
+                setDonorPage(1);
+              }}
+              className="input-base w-72"
+              placeholder="Search donors"
+            />
+          </div>
+          {donors.length === 0 ? <EmptyState title="No donors found" /> : (
             <div className="space-y-2">
-              {donors.length === 0 ? (
-                <EmptyState icon="👥" title="No users found" />
-              ) : donors.map((u, i) => (
-                <motion.div key={u._id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
-                  className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-blood/10 dark:bg-blood/20 flex items-center justify-center font-bold text-blood text-sm flex-shrink-0">
-                    {u.name?.charAt(0)?.toUpperCase()}
+              {donors.map((donor) => (
+                <div key={donor._id} className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900 dark:text-white">{donor.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {donor.phone} | {donor.bloodGroup || "N/A"} | {donor.location?.city || "N/A"} | {donor.verificationStatus}
+                    </p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900 dark:text-white text-sm">{u.name}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{u.phone} · {u.city || "—"} · {u.role}</p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {u.isVerified && <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-safe text-xs font-semibold">✓ Verified</span>}
-                    {u.isBanned && <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-blood text-xs font-semibold">Banned</span>}
-                    <button
-                      onClick={() => toggleUserStatus(u._id, u.isBanned)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
-                        u.isBanned
-                          ? "bg-green-100 dark:bg-green-900/30 text-safe hover:bg-green-200"
-                          : "bg-red-100 dark:bg-red-900/30 text-blood hover:bg-red-200"
-                      }`}
-                    >
-                      {u.isBanned ? "Unban" : "Ban"}
-                    </button>
-                  </div>
-                </motion.div>
+                  <select className="input-base w-36" value={donor.role} onChange={(event) => updateRole(donor._id, event.target.value)}>
+                    <option value="donor">donor</option>
+                    <option value="recipient">recipient</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
               ))}
             </div>
+          )}
+          {donorPagination.pages > 1 && (
+            <Pagination
+              page={donorPagination.page}
+              pages={donorPagination.pages}
+              hasNext={donorPagination.hasNext}
+              hasPrev={donorPagination.hasPrev}
+              onNext={() => setDonorPage((previous) => previous + 1)}
+              onPrev={() => setDonorPage((previous) => previous - 1)}
+            />
+          )}
+        </div>
+      )}
 
-            {donorPagination.pages > 1 && (
-              <Pagination
-                page={donorPagination.page}
-                pages={donorPagination.pages}
-                hasNext={donorPagination.hasNext}
-                hasPrev={donorPagination.hasPrev}
-                onNext={() => setDonorPage((p) => p + 1)}
-                onPrev={() => setDonorPage((p) => p - 1)}
-              />
-            )}
-          </motion.div>
-        )}
+      {tab === "hospitals" && (
+        <div className="section-card space-y-4">
+          <div className="flex gap-3 items-center">
+            <h2 className="font-semibold text-slate-900 dark:text-white mr-auto">Registered Hospitals</h2>
+            <input
+              value={hospitalSearch}
+              onChange={(event) => {
+                setHospitalSearch(event.target.value);
+                setHospitalPage(1);
+              }}
+              className="input-base w-72"
+              placeholder="Search hospitals"
+            />
+          </div>
+          {hospitals.length === 0 ? <EmptyState title="No hospitals found" /> : (
+            <div className="space-y-2">
+              {hospitals.map((hospital) => (
+                <div key={hospital._id} className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900 dark:text-white">{hospital.hospitalName || hospital.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {hospital.phone} | {hospital.location?.city || "N/A"} | License: {hospital.hospitalLicenseNumber || "N/A"}
+                    </p>
+                  </div>
+                  <select className="input-base w-36" value={hospital.role} onChange={(event) => updateRole(hospital._id, event.target.value)}>
+                    <option value="donor">donor</option>
+                    <option value="recipient">recipient</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+          {hospitalPagination.pages > 1 && (
+            <Pagination
+              page={hospitalPagination.page}
+              pages={hospitalPagination.pages}
+              hasNext={hospitalPagination.hasNext}
+              hasPrev={hospitalPagination.hasPrev}
+              onNext={() => setHospitalPage((previous) => previous + 1)}
+              onPrev={() => setHospitalPage((previous) => previous - 1)}
+            />
+          )}
+        </div>
+      )}
 
-        {/* VERIFICATIONS ──────────────────────────────────────── */}
-        {tab === "verifications" && (
-          <motion.div key="verif" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="section-card space-y-4">
-            <h2 className="font-display font-bold text-slate-900 dark:text-white">Pending Verifications</h2>
-            {pendingVerifs.length === 0 ? (
-              <EmptyState icon="🎉" title="All caught up!" description="No pending verifications at the moment." />
-            ) : (
-              <div className="space-y-3">
-                {pendingVerifs.map((u, i) => (
-                  <motion.div key={u._id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                    className="flex items-start gap-4 p-4 rounded-2xl border border-amber-100 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/10"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center font-bold text-amber-700 dark:text-amber-400 text-sm flex-shrink-0">
-                      {u.name?.charAt(0)?.toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-900 dark:text-white text-sm">{u.name}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{u.phone} · {u.role} · {u.hospitalName || u.city}</p>
-                      {u.licenseUrl && (
-                        <a href={u.licenseUrl} target="_blank" rel="noreferrer" className="text-xs text-organ hover:underline mt-1 block">
-                          📎 View License Document
-                        </a>
-                      )}
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => verifyUser(u._id, "approve")}
-                        className="px-4 py-2 rounded-xl bg-safe text-white text-xs font-bold hover:bg-green-700 transition-colors"
-                      >
-                        ✓ Approve
-                      </button>
-                      <button
-                        onClick={() => verifyUser(u._id, "reject")}
-                        className="px-4 py-2 rounded-xl bg-blood text-white text-xs font-bold hover:bg-red-700 transition-colors"
-                      >
-                        ✕ Reject
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      {tab === "roles" && (
+        <div className="section-card space-y-4">
+          <div className="flex gap-3 items-center">
+            <h2 className="font-semibold text-slate-900 dark:text-white mr-auto">Admin Role Management</h2>
+            <input
+              value={userSearch}
+              onChange={(event) => {
+                setUserSearch(event.target.value);
+                setUserPage(1);
+              }}
+              className="input-base w-72"
+              placeholder="Search users"
+            />
+          </div>
+          {users.length === 0 ? <EmptyState title="No users found" /> : (
+            <div className="space-y-2">
+              {users.map((user) => (
+                <div key={user._id} className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900 dark:text-white">{user.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {user.phone} | {user.email || "no-email"} | current role: {user.role}
+                    </p>
+                  </div>
+                  <select className="input-base w-36" value={user.role} onChange={(event) => updateRole(user._id, event.target.value)}>
+                    <option value="donor">donor</option>
+                    <option value="recipient">recipient</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+          {userPagination.pages > 1 && (
+            <Pagination
+              page={userPagination.page}
+              pages={userPagination.pages}
+              hasNext={userPagination.hasNext}
+              hasPrev={userPagination.hasPrev}
+              onNext={() => setUserPage((previous) => previous + 1)}
+              onPrev={() => setUserPage((previous) => previous - 1)}
+            />
+          )}
+        </div>
+      )}
+
+      {tab === "verifications" && (
+        <div className="section-card space-y-4">
+          <h2 className="font-semibold text-slate-900 dark:text-white">Pending Verifications</h2>
+          {pendingVerifications.length === 0 ? <EmptyState title="No pending verifications" /> : (
+            <div className="space-y-2">
+              {pendingVerifications.map((user) => (
+                <div key={user._id} className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900 dark:text-white">{user.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {user.phone} | {user.role} | {user.hospitalName || user.location?.city || "N/A"}
+                    </p>
+                  </div>
+                  <button onClick={() => reviewVerification(user._id, true)} className="btn-organ">Approve</button>
+                  <button onClick={() => reviewVerification(user._id, false)} className="btn-secondary">Reject</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "requests" && (
+        <div className="section-card space-y-4">
+          <h2 className="font-semibold text-slate-900 dark:text-white">Recent Requests</h2>
+          {requests.length === 0 ? <EmptyState title="No requests found" /> : (
+            <div className="space-y-2">
+              {requests.map((request) => (
+                <div key={request._id} className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900 dark:text-white">{request.hospitalName}</p>
+                    <p className="text-xs text-slate-500">
+                      {request.type === "blood" ? request.bloodGroup : request.organType} | {request.location?.city || "N/A"} | {request.urgency}
+                    </p>
+                  </div>
+                  <RequestStatusBadge status={request.status} />
+                </div>
+              ))}
+            </div>
+          )}
+          {requestPagination.pages > 1 && (
+            <Pagination
+              page={requestPagination.page}
+              pages={requestPagination.pages}
+              hasNext={requestPagination.hasNext}
+              hasPrev={requestPagination.hasPrev}
+              onNext={() => setRequestPage((previous) => previous + 1)}
+              onPrev={() => setRequestPage((previous) => previous - 1)}
+            />
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 

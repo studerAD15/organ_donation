@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { DarkModeToggle } from "../components/ui/index";
@@ -131,9 +131,22 @@ const Layout = ({ children }) => {
 
       <footer className="border-t border-slate-200 dark:border-slate-700 mt-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-sm text-slate-400 dark:text-slate-500">
-            Copyright {new Date().getFullYear()} LifeLink Portal � Built with care for organ donation
-          </p>
+          <div className="space-y-1">
+            <p className="text-sm text-slate-400 dark:text-slate-500">
+              Copyright {new Date().getFullYear()} LifeLink Portal · Built with care for organ donation
+            </p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Created by ADITYA CHHIKARA with love ·{" "}
+              <a
+                href="https://www.linkedin.com/in/aditya-chhikara-9a7453306"
+                target="_blank"
+                rel="noreferrer"
+                className="text-organ hover:underline"
+              >
+                LinkedIn
+              </a>
+            </p>
+          </div>
           <div className="flex gap-4 text-xs text-slate-400 dark:text-slate-500">
             <Link to="/requests" className="hover:text-blood transition-colors">Requests</Link>
             <Link to="/map" className="hover:text-blood transition-colors">Map</Link>
@@ -146,3 +159,4 @@ const Layout = ({ children }) => {
 };
 
 export default Layout;
+
